@@ -55,6 +55,11 @@ dialog form{display:grid;gap:14px}
 .tabs{display:flex;gap:8px}
 .err{color:var(--anime);min-height:1.2em;font-size:.9rem;margin:0}
 footer{border-top:1px solid var(--line);padding:20px 0 30px;color:var(--muted);font-size:.9rem}
+.stream{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;margin:4px 0 24px}
+.stream h2{font-size:1.6rem}
+.stream p{color:var(--muted);margin:10px 0 16px}
+.stream video{display:block;width:100%;max-height:65vh;aspect-ratio:16/9;background:var(--bg);border-radius:10px;margin-top:16px}
+#stream-status{margin-bottom:0}
 </style>
 </head>
 <body>
@@ -70,6 +75,13 @@ footer{border-top:1px solid var(--line);padding:20px 0 30px;color:var(--muted);f
 <p>Save what you want to watch, build your profile, and let Framemax choose tonight’s title.</p>
 <div class="pick"><button class="btn" id="rand">Pick something for tonight</button><div id="result">Press the button to get a title.</div></div>
 </header>
+<section class="stream" aria-labelledby="stream-heading">
+<h2 id="stream-heading">Watch on Framemax</h2>
+<p>Play the connected stream. Availability depends on the stream provider.</p>
+<button class="btn" id="stream-play" type="button">Play stream</button>
+<video id="stream-video" class="hidden" controls playsinline preload="none" aria-label="Framemax stream"></video>
+<p id="stream-status" role="status" aria-live="polite">Ready to play.</p>
+</section>
 <div class="bar" role="group" aria-label="Filters">
 <button class="chip" data-f="all" aria-pressed="true">All</button>
 <button class="chip" data-f="movie" aria-pressed="false">Movies</button>
@@ -104,6 +116,47 @@ footer{border-top:1px solid var(--line);padding:20px 0 30px;color:var(--muted);f
 </form>
 </dialog>
 
+<script src="/assets/hls.min.js"></script>
+<script>
+var streamPlayer=null;
+var streamVideo=document.getElementById('stream-video');
+var streamButton=document.getElementById('stream-play');
+var streamStatus=document.getElementById('stream-status');
+var streamUrl='https://iptv.mokane.uk/pl/23649a98ef2c26d8f677346f.m3u8';
+function streamFailed(){
+ if(streamPlayer){streamPlayer.destroy();streamPlayer=null}
+ streamVideo.pause();streamVideo.removeAttribute('src');streamVideo.load();
+ streamStatus.textContent='The stream could not be loaded. The provider may be offline or may not allow playback on this site. Try again shortly.';
+ streamButton.textContent='Retry stream';streamButton.disabled=false;
+}
+function playStream(){
+ var attempt=streamVideo.play();
+ if(attempt)attempt.catch(function(error){
+  if(error.name==='NotAllowedError')streamStatus.textContent='Press play in the video controls to start watching.';
+  else if(error.name!=='AbortError')streamFailed();
+ });
+}
+streamButton.onclick=function(){
+ if(streamPlayer){streamPlayer.destroy();streamPlayer=null}
+ streamVideo.classList.remove('hidden');streamStatus.textContent='Loading stream…';
+ streamButton.disabled=true;
+ if(streamVideo.canPlayType('application/vnd.apple.mpegurl')){
+  streamVideo.src=streamUrl;playStream();
+ }else if(window.Hls&&Hls.isSupported()){
+  streamPlayer=new Hls();
+  streamPlayer.on(Hls.Events.MANIFEST_PARSED,playStream);
+  streamPlayer.on(Hls.Events.ERROR,function(event,data){if(data.fatal)streamFailed()});
+  streamPlayer.loadSource(streamUrl);streamPlayer.attachMedia(streamVideo);
+ }else{
+  streamStatus.textContent='This browser does not support this stream. Try a recent version of Safari, Chrome, Firefox, or Edge.';
+  streamButton.disabled=false;
+ }
+};
+streamVideo.addEventListener('playing',function(){streamStatus.textContent='Playing. Use the video controls to pause, change volume, or enter fullscreen.'});
+streamVideo.addEventListener('waiting',function(){streamStatus.textContent='Buffering stream…'});
+streamVideo.addEventListener('error',function(){if(streamVideo.getAttribute('src')||streamPlayer)streamFailed()});
+streamVideo.addEventListener('ended',function(){streamStatus.textContent='The stream has ended.';streamButton.textContent='Play again';streamButton.disabled=false});
+</script>
 <script>
 var D=[
 ["Inception",2010,"movie","Sci-Fi","Film"],["Parasite",2019,"movie","Thriller","Film"],["Interstellar",2014,"movie","Sci-Fi","Film"],
