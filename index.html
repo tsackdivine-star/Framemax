@@ -59,6 +59,7 @@ dialog form{display:grid;gap:14px}
 .stream video{display:block;width:100%;aspect-ratio:16/9;background:#06100b;border-radius:10px;margin-top:16px}
 .stream-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.stream-tools select{flex:1;min-width:180px}
 #stream-status{margin-bottom:0}button:disabled{opacity:.6;cursor:wait}
+.cinema{border-top:3px solid var(--film);padding:26px}.cinema-heading{display:flex;justify-content:space-between;gap:14px;align-items:center}.eyebrow{display:block;color:var(--film);font-size:.72rem;letter-spacing:.17em;margin-bottom:12px}.movie-search{display:grid;grid-template-columns:1.1fr 1.6fr .8fr auto;gap:12px;align-items:end}.cinema label{display:grid;gap:6px;font-size:.85rem;color:var(--muted);min-width:0}.movie-lookup{margin-top:16px;color:var(--muted)}.movie-lookup summary{cursor:pointer}.movie-lookup form{margin-top:12px}.movie-lookup label{flex:1}.cinema .provider-note{font-size:.82rem}.movie-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}.movie-result{padding:16px;background:var(--raise);border:1px solid var(--line);border-radius:10px;text-align:left;cursor:pointer}.movie-result strong,.movie-result small{display:block}.movie-result small{color:var(--muted);margin-top:6px}.movie-result:hover{border-color:var(--film)}#movie-player{margin-top:20px;border-top:1px solid var(--line);padding-top:20px}#movie-sources{margin-top:16px}#movie-embed{width:100%;aspect-ratio:16/9;border:0;background:#06100b;margin-top:16px;border-radius:10px}.provider-link{display:inline-block;color:var(--mint);margin-top:12px}#movie-episodes{margin-top:14px}#movie-episodes input{max-width:100px}#movie-status[data-error="true"]{color:var(--anime)}@media(max-width:760px){.movie-search{grid-template-columns:1fr 1fr}.movie-search label:nth-child(2){grid-column:1/-1;grid-row:1}.cinema{padding:18px}.cinema-heading>.chip{display:none}.movie-search .btn{grid-column:1/-1}}
 footer{border-top:1px solid var(--line);padding:20px 0 30px;color:var(--muted);font-size:.9rem}
 </style>
 </head>
@@ -75,6 +76,28 @@ footer{border-top:1px solid var(--line);padding:20px 0 30px;color:var(--muted);f
 <p>Save what you want to watch, build your profile, and let Framemax choose tonight’s title.</p>
 <div class="pick"><button class="btn" id="rand">Pick something for tonight</button><div id="result">Press the button to get a title.</div></div>
 </header>
+<section class="stream cinema" id="movie-watch" aria-labelledby="movie-heading">
+<div class="cinema-heading"><div><small class="eyebrow">ON DEMAND / 05 PROVIDERS</small><h2 id="movie-heading">Find your next frame.</h2></div><span class="chip">Movies &amp; series</span></div>
+<p>Search a provider, choose a title, and watch available streams here.</p>
+<form id="movie-search" class="movie-search">
+<label>Provider<select class="field" id="movie-provider"><option value="prexzy">Prexzy / TMDB</option><option value="pro2">MovieBox Pro 2</option><option value="movie">Omega Movie</option><option value="offline">Moviebox Off</option><option value="lk21">LK21 +18</option></select></label>
+<label>Title<input class="field" id="movie-query" type="search" placeholder="Search a movie or series" maxlength="200" required></label>
+<label>Type<select class="field" id="movie-type"><option value="movie">Movie</option><option value="tv">Series / anime</option></select></label>
+<button class="btn" type="submit">Search provider</button>
+</form>
+<div class="row hidden" id="movie-episodes"><label>Season<input class="field" id="movie-season" type="number" min="1" max="9999" value="1"></label><label>Episode<input class="field" id="movie-episode" type="number" min="1" max="9999" value="1"></label></div>
+<details class="movie-lookup"><summary>Already have a provider title ID?</summary><form class="row" id="movie-lookup"><label>Title ID<input class="field" id="movie-id" maxlength="500" placeholder="ID from the selected provider" required></label><button class="btn ghost" type="submit">Load title</button><button class="btn ghost" type="button" id="movie-resolve">Find streams</button></form></details>
+<p class="provider-note">Provider availability varies. Some results contain title information only; watching requires a playable link from the provider.</p>
+<p id="movie-status" role="status" aria-live="polite">Choose a provider to start.</p>
+<div id="movie-results" class="movie-results" aria-label="Provider search results"></div>
+<div id="movie-player" class="hidden">
+<div class="row"><h3 id="movie-playing">Available streams</h3><button class="btn ghost" id="movie-stop" type="button">Stop playback</button></div>
+<div id="movie-sources" class="row" aria-label="Available streams"></div>
+<video id="movie-video" class="hidden" controls playsinline preload="none" aria-label="Movie video player"></video>
+<iframe id="movie-embed" class="hidden" title="Provider movie player" sandbox="allow-scripts allow-presentation" allow="fullscreen; encrypted-media; picture-in-picture" referrerpolicy="no-referrer" allowfullscreen></iframe>
+<a class="provider-link hidden" id="movie-external" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Open selected stream in a new tab</a>
+</div>
+</section>
 <section class="stream" aria-labelledby="stream-heading">
 <h2 id="stream-heading">Watch now</h2>
 <p>Play the connected IPTV source, or choose a title when its playlist is available.</p>
@@ -143,7 +166,7 @@ async function hash(email,pw){
 }
 function card(d,on){
  var h=hue(d[0]),t=esc(d[0]);
- return '<article class="card" data-t="'+d[2]+'"><div class="poster" style="background:linear-gradient(160deg,hsl('+h+',55%,36%),hsl('+((h+50)%360)+',55%,16%))"><i>'+t.charAt(0)+'</i><div class="kind">'+(d[2]==="anime"?"Anime":"Movie")+'</div><span>'+t+'</span></div><div class="info"><small>'+d[1]+' · '+d[3]+' · '+d[4]+'</small><button class="save" data-id="'+t+'" aria-pressed="'+on+'">'+(on?"Saved":"Save to watch")+'</button></div></article>';
+ return '<article class="card" data-t="'+d[2]+'"><div class="poster" style="background:linear-gradient(160deg,hsl('+h+',55%,36%),hsl('+((h+50)%360)+',55%,16%))"><i>'+t.charAt(0)+'</i><div class="kind">'+(d[2]==="anime"?"Anime":"Movie")+'</div><span>'+t+'</span></div><div class="info"><small>'+d[1]+' · '+d[3]+' · '+d[4]+'</small><button type="button" class="save" data-watch="'+t+'">Find streams</button><button class="save" data-id="'+t+'" aria-pressed="'+on+'">'+(on?"Saved":"Save to watch")+'</button></div></article>';
 }
 function render(){
  var u=me(),q=$("q").value.toLowerCase().trim(),out="",mine="";
@@ -184,7 +207,7 @@ $("out").onclick=function(){session=null;save("fm-session",null);render();show("
 $("pform").onsubmit=function(e){e.preventDefault();var u=me();u.name=$("pn").value.trim()||u.name;u.genre=$("pg").value;save("fm-users",users);render();show("profile");$("pmsg").textContent="Profile saved."};
 document.querySelectorAll(".chip[data-f]").forEach(function(c){c.onclick=function(){filter=c.dataset.f;document.querySelectorAll(".chip[data-f]").forEach(function(x){x.setAttribute("aria-pressed",x===c)});render()}});
 $("q").oninput=render;
-function toggle(e){var b=e.target.closest(".save");if(!b)return;var u=me();if(!u){openAuth("up");return}
+function toggle(e){var b=e.target.closest(".save:not([data-watch])");if(!b)return;var u=me();if(!u){openAuth("up");return}
  var n=D.filter(function(d){return esc(d[0])===b.dataset.id})[0][0];if(u.saved[n])delete u.saved[n];else u.saved[n]=1;save("fm-users",users);render()}
 $("grid").onclick=toggle;$("mine").onclick=toggle;
 $("rand").onclick=function(){
@@ -259,5 +282,6 @@ render();
  window.addEventListener('pagehide',function(){if(controller)controller.abort();cleanPlayer()});
 })();
 </script>
+<script src="/movie-watch.js"></script>
 </body>
 </html>
