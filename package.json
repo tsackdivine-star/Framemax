@@ -1,0 +1,7 @@
+{
+  "name": "framemax",
+  "private": true,
+  "type": "module",
+  "scripts": {"test": "node --experimental-strip-types --test tests/*.test.mjs"},
+  "devDependencies": {"@netlify/functions": "^5.0.0", "typescript": "^5.9.0"}
+}
