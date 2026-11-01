@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Framemax: movies and anime</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07140F;--surface:#0E2219;--raise:#143125;--ink:#E4F5EA;--muted:#8FB5A0;--line:#21443A;--film:#E9C46A;--anime:#FF8F7A;--mint:#3DDC97;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 "DM Sans",system-ui,sans-serif}
+h1,h2,h3,.logo{font-family:"Bricolage Grotesque","DM Sans",system-ui,sans-serif;margin:0;line-height:1.05}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:1040px;margin:0 auto;padding:0 18px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}
+.logo{font-size:1.6rem;font-weight:800;letter-spacing:-.03em;cursor:pointer;background:none;border:0;padding:0}
+.logo b{color:var(--mint)}
+.btn{background:var(--mint);color:#062014;border:0;border-radius:999px;padding:10px 20px;font-weight:500;cursor:pointer}
+.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.me{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 14px 4px 4px;cursor:pointer}
+.av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#062014;background:var(--mint)}
+:is(button,input,select):focus-visible{outline:3px solid var(--film);outline-offset:2px}
+.hero{padding:40px 0 24px}
+.hero h1{font-size:clamp(2.6rem,10vw,5rem);font-weight:800;letter-spacing:-.03em}
+.f{color:var(--film)}.a{color:var(--anime)}
+.hero p{max-width:46ch;color:var(--muted);margin:14px 0 22px}
+.pick{display:flex;gap:14px;flex-wrap:wrap}
+#result{flex:1;min-width:230px;border:1px dashed var(--line);border-radius:14px;padding:10px 16px;color:var(--muted);display:flex;align-items:center}
+#result b{color:var(--ink);font-family:"Bricolage Grotesque",sans-serif;font-size:1.15rem;margin-right:8px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:10px 0;z-index:5}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:7px 15px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--mint);color:#062014;border-color:var(--mint)}
+.field{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;width:100%}
+#q{flex:1;min-width:140px;width:auto;border-radius:999px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px;padding:12px 0 40px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.poster{aspect-ratio:2/3;position:relative;display:flex;align-items:flex-end;padding:12px;color:#fff}
+.poster span{font:800 1.2rem/1 "Bricolage Grotesque",sans-serif;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.poster i{position:absolute;top:8px;left:10px;font:800 3.4rem/1 "Bricolage Grotesque",sans-serif;opacity:.28;font-style:normal}
+.kind{position:absolute;top:10px;right:10px;font-size:.75rem;font-weight:500;padding:2px 9px;border-radius:999px;background:var(--film);color:#1d1600}
+.card[data-t="anime"] .kind{background:var(--anime);color:#2a0c05}
+.info{padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.info small{color:var(--muted)}
+.save{margin-top:auto;border:1px solid var(--line);background:transparent;border-radius:8px;padding:6px;cursor:pointer;font-size:.9rem}
+.save[aria-pressed="true"]{background:var(--mint);color:#062014;border-color:var(--mint)}
+.empty{grid-column:1/-1;color:var(--muted);padding:24px 0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;margin:28px 0 8px;display:grid;gap:14px;max-width:520px}
+.panel label{display:grid;gap:6px;color:var(--muted);font-size:.9rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hidden{display:none!important}
+dialog{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:24px;width:min(400px,92vw)}
+dialog::backdrop{background:rgba(2,10,6,.75)}
+dialog form{display:grid;gap:14px}
+.tabs{display:flex;gap:8px}
+.err{color:var(--anime);min-height:1.2em;font-size:.9rem;margin:0}
+footer{border-top:1px solid var(--line);padding:20px 0 30px;color:var(--muted);font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+<button class="logo" id="home" aria-label="Framemax home">Frame<b>max</b></button>
+<div id="auth"></div>
+</nav>
+
+<section id="browse">
+<header class="hero">
+<h1><span class="f">Movies</span> &amp;<br><span class="a">anime</span>, one list.</h1>
+<p>Save what you want to watch, build your profile, and let Framemax choose tonight’s title.</p>
+<div class="pick"><button class="btn" id="rand">Pick something for tonight</button><div id="result">Press the button to get a title.</div></div>
+</header>
+<div class="bar" role="group" aria-label="Filters">
+<button class="chip" data-f="all" aria-pressed="true">All</button>
+<button class="chip" data-f="movie" aria-pressed="false">Movies</button>
+<button class="chip" data-f="anime" aria-pressed="false">Anime</button>
+<input class="field" id="q" type="search" placeholder="Search titles or genres" aria-label="Search titles or genres">
+</div>
+<main class="grid" id="grid"></main>
+</section>
+
+<section id="profile" class="hidden">
+<form class="panel" id="pform">
+<div class="row"><div class="av" id="pav" style="width:56px;height:56px;font-size:1.5rem"></div><div><h2 id="pname"></h2><small id="pmail" style="color:var(--muted)"></small></div></div>
+<label>Display name<input class="field" id="pn" required maxlength="30"></label>
+<label>Favorite genre<select class="field" id="pg"><option value="">No preference</option><option>Sci-Fi</option><option>Fantasy</option><option>Thriller</option><option>Action</option><option>Romance</option><option>Adventure</option><option>Animation</option></select></label>
+<div class="row"><button class="btn" type="submit">Save profile</button><button class="btn ghost" type="button" id="out">Sign out</button><span id="pmsg" style="color:var(--mint)"></span></div>
+</form>
+<h2 style="margin:28px 0 4px">My watchlist</h2>
+<div class="grid" id="mine"></div>
+</section>
+
+<footer>Framemax is a starter site. Posters are generated colors, not official artwork.</footer>
+</div>
+
+<dialog id="dlg">
+<form id="aform" novalidate>
+<div class="tabs"><button type="button" class="chip" data-m="in" aria-pressed="true">Sign in</button><button type="button" class="chip" data-m="up" aria-pressed="false">Create account</button></div>
+<label class="hidden" id="nl" style="display:grid;gap:6px;color:var(--muted);font-size:.9rem">Name<input class="field" id="an" maxlength="30" autocomplete="name"></label>
+<label style="display:grid;gap:6px;color:var(--muted);font-size:.9rem">Email<input class="field" id="ae" type="email" required autocomplete="email"></label>
+<label style="display:grid;gap:6px;color:var(--muted);font-size:.9rem">Password (6+ characters)<input class="field" id="ap" type="password" required minlength="6" autocomplete="current-password"></label>
+<p class="err" id="aerr" role="alert"></p>
+<div class="row"><button class="btn" id="asub" type="submit">Sign in</button><button class="btn ghost" type="button" id="acl">Cancel</button></div>
+</form>
+</dialog>
+
+<script>
+var D=[
+["Inception",2010,"movie","Sci-Fi","Film"],["Parasite",2019,"movie","Thriller","Film"],["Interstellar",2014,"movie","Sci-Fi","Film"],
+["Mad Max: Fury Road",2015,"movie","Action","Film"],["Dune",2021,"movie","Sci-Fi","Film"],["Spider-Man: Into the Spider-Verse",2018,"movie","Animation","Film"],
+["Spirited Away",2001,"anime","Fantasy","Film"],["Your Name",2016,"anime","Romance","Film"],["Akira",1988,"anime","Sci-Fi","Film"],
+["Princess Mononoke",1997,"anime","Fantasy","Film"],["Cowboy Bebop",1998,"anime","Sci-Fi","Series"],["Fullmetal Alchemist: Brotherhood",2009,"anime","Adventure","Series"],
+["Death Note",2006,"anime","Thriller","Series"],["Attack on Titan",2013,"anime","Action","Series"]
+];
+var $=function(i){return document.getElementById(i)};
+var mem={users:{},session:null};
+function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return mem[k==="fm-users"?"users":"session"]||d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){mem[k==="fm-users"?"users":"session"]=v}}
+var users=load("fm-users",{}),session=load("fm-session",null),filter="all",mode="in";
+function me(){return session&&users[session]?users[session]:null}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function hue(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h}
+async function hash(email,pw){
+ var t=email+"|"+pw;
+ try{var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")}
+ catch(e){var h=0;for(var i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0;return "x"+h}
+}
+function card(d,on){
+ var h=hue(d[0]),t=esc(d[0]);
+ return '<article class="card" data-t="'+d[2]+'"><div class="poster" style="background:linear-gradient(160deg,hsl('+h+',55%,36%),hsl('+((h+50)%360)+',55%,16%))"><i>'+t.charAt(0)+'</i><div class="kind">'+(d[2]==="anime"?"Anime":"Movie")+'</div><span>'+t+'</span></div><div class="info"><small>'+d[1]+' · '+d[3]+' · '+d[4]+'</small><button class="save" data-id="'+t+'" aria-pressed="'+on+'">'+(on?"Saved":"Save to watch")+'</button></div></article>';
+}
+function render(){
+ var u=me(),q=$("q").value.toLowerCase().trim(),out="",mine="";
+ D.forEach(function(d){
+  var on=!!(u&&u.saved[d[0]]);
+  if(on)mine+=card(d,true);
+  if((filter==="all"||filter===d[2])&&(!q||(d[0]+" "+d[3]).toLowerCase().indexOf(q)>=0))out+=card(d,on);
+ });
+ $("grid").innerHTML=out||'<p class="empty">No titles match your search.</p>';
+ $("mine").innerHTML=mine||'<p class="empty">Nothing saved yet. Browse titles and tap Save to watch.</p>';
+ var a=$("auth");
+ if(u)a.innerHTML='<button class="me" id="gp"><span class="av" style="background:hsl('+hue(session)+',70%,60%)">'+esc(u.name.charAt(0).toUpperCase())+'</span>'+esc(u.name)+'</button>';
+ else a.innerHTML='<button class="btn" id="gi">Sign in</button>';
+}
+function show(v){$("browse").classList.toggle("hidden",v!=="browse");$("profile").classList.toggle("hidden",v!=="profile");window.scrollTo(0,0);
+ if(v==="profile"){var u=me();$("pname").textContent=u.name;$("pmail").textContent=session;$("pn").value=u.name;$("pg").value=u.genre||"";$("pmsg").textContent="";
+  var av=$("pav");av.textContent=u.name.charAt(0).toUpperCase();av.style.background="hsl("+hue(session)+",70%,60%)"}}
+function setMode(m){mode=m;document.querySelectorAll("[data-m]").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.m===m)});
+ $("nl").classList.toggle("hidden",m==="in");$("asub").textContent=m==="in"?"Sign in":"Create account";$("ap").autocomplete=m==="in"?"current-password":"new-password";$("aerr").textContent=""}
+function openAuth(m){setMode(m||"in");$("aform").reset();$("dlg").showModal();$("ae").focus()}
+document.querySelectorAll("[data-m]").forEach(function(b){b.onclick=function(){setMode(b.dataset.m)}});
+$("acl").onclick=function(){$("dlg").close()};
+$("aform").onsubmit=async function(e){
+ e.preventDefault();
+ var em=$("ae").value.trim().toLowerCase(),pw=$("ap").value,err=$("aerr");
+ if(!/^\S+@\S+\.\S+$/.test(em)){err.textContent="Enter a valid email address.";return}
+ if(pw.length<6){err.textContent="Use a password with at least 6 characters.";return}
+ var h=await hash(em,pw);
+ if(mode==="up"){
+  if(users[em]){err.textContent="That email already has an account. Switch to Sign in.";return}
+  users[em]={name:($("an").value.trim()||em.split("@")[0]).slice(0,30),hash:h,genre:"",saved:{}};save("fm-users",users);
+ }else if(!users[em]||users[em].hash!==h){err.textContent="Email or password is incorrect.";return}
+ session=em;save("fm-session",session);$("dlg").close();render();
+};
+$("auth").onclick=function(e){if(e.target.closest("#gi"))openAuth("in");if(e.target.closest("#gp"))show("profile")};
+$("home").onclick=function(){show("browse")};
+$("out").onclick=function(){session=null;save("fm-session",null);render();show("browse")};
+$("pform").onsubmit=function(e){e.preventDefault();var u=me();u.name=$("pn").value.trim()||u.name;u.genre=$("pg").value;save("fm-users",users);render();show("profile");$("pmsg").textContent="Profile saved."};
+document.querySelectorAll(".chip[data-f]").forEach(function(c){c.onclick=function(){filter=c.dataset.f;document.querySelectorAll(".chip[data-f]").forEach(function(x){x.setAttribute("aria-pressed",x===c)});render()}});
+$("q").oninput=render;
+function toggle(e){var b=e.target.closest(".save");if(!b)return;var u=me();if(!u){openAuth("up");return}
+ var n=D.filter(function(d){return esc(d[0])===b.dataset.id})[0][0];if(u.saved[n])delete u.saved[n];else u.saved[n]=1;save("fm-users",users);render()}
+$("grid").onclick=toggle;$("mine").onclick=toggle;
+$("rand").onclick=function(){
+ var u=me(),pool=D;
+ if(u&&u.genre){var g=D.filter(function(d){return d[3]===u.genre});if(g.length)pool=g}
+ var d=pool[Math.floor(Math.random()*pool.length)];
+ $("result").innerHTML="<b>"+esc(d[0])+"</b> "+d[1]+" · "+d[3]+" · "+(d[2]==="anime"?"Anime":"Movie")+(u&&u.genre?" (matches your favorite genre)":"");
+};
+render();
+</script>
+</body>
+</html>
